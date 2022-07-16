@@ -54,10 +54,10 @@ public:
 	// function that solves (integrates) the CTR ode (state) equations
 	blaze::StaticVector<double, 5UL> ODESolver(const blaze::StaticVector<double, 5UL> &initGuess);
 
-	// function that computes the finite-differences Jacobian for solving the BVP
+	// function that computes the Jacobian of residues for solving the BVP
 	blaze::StaticMatrix<double, 5UL, 5UL> jac_BVP();
 
-	// function that computes the finite-differences Jacobian wrt actuation inputs
+	// function that computes the spatial velocities Jacobian wrt actuation inputs
 	std::pair<blaze::StaticMatrix<double, 6UL, 6UL>, blaze::StaticMatrix<double, 6UL, 6UL>> jacobian();
 
 	// function that implements Powell's Dog Leg Method (Nonlinear root-finding method for solving the BVP)
@@ -145,8 +145,8 @@ public:
 	blaze::StaticMatrix<double, 6UL, 17UL> unpackEMatrix(const state_type& s);
 
 private:
-	double m_accuracy;								// epsilon perturbation for calculating Jacobians
-	mathOp::rootFindingMethod m_method;					// method---> 1: levenberg - marquardt, 2 : Newton_Raphson
+	double m_accuracy;									// accuracy to which the BVP must be solved
+	mathOp::rootFindingMethod m_method;					// methods available: Newton-Raphson, Levenberg-Marquardt, Broyden
 	std::array<std::shared_ptr<Tube>, 3UL> m_Tubes; 	// Vector of tubes comprising the CTR
 	vec3d m_beta;										// linear actuation
 	blaze::StaticVector<double, 6UL> m_q;				// joint actuation values
@@ -155,7 +155,7 @@ private:
 	vec3d m_wm;											// external moment at the CTR tip (moment component of the external wrench
 	vec3d m_e3;											// third canonical basis of R^3
 	std::unique_ptr<Segment> m_segment;					// segments between transition points in the CTR
-	vec3d m_r_0;										// initial position of local frame at s = 0 or at the end of the i-th segment (for BC)
+	vec3d m_r_0;										// origin of the local frame at s = 0 or at the end of the i-th segment (for BC)
 	blaze::StaticVector<double, 4UL> m_h_0;				// initial orientation of local frame at s = 0 (or at the end of the i-th segment (for BC)) ==>> QUATERNION
 	std::vector<state_type> m_y;						// stores the CTR state vector at each integration step
 	std::vector<double> m_s;							// stores the arc-length points along the backbone
