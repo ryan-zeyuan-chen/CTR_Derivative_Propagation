@@ -19,7 +19,7 @@ public:
 	// Segment() = delete;
 
 	// overloaded class constructor
-	Segment(const std::array<std::shared_ptr<Tube>, 3UL> &Tb, const vec3d &beta);
+	Segment(const std::array<std::shared_ptr<Tube>, 3UL> &Tb, const blaze::StaticVector<double, 3UL> &beta);
 
 	// copy constructor
 	Segment(const Segment &rhs);
@@ -30,10 +30,10 @@ public:
 	// Segment desctructor
 	~Segment();
 
-	double getDistStraightEndTb1()
-	{
-		return m_len_curv[0];
-	}
+	// double getDistStraightEndTb1()
+	// {
+	// 	return m_len_curv[0];
+	// }
 
 	// copy assignment operator
 	Segment &operator=(const Segment &rhs);
@@ -42,7 +42,7 @@ public:
 	Segment &operator=(Segment &&rhs) noexcept;
 
 	// implements a functor to overload the constructors signature and allow recalculation of the CTR segmentation
-	void recalculateSegments(const std::array<std::shared_ptr<Tube>, 3> &Tb, const vec3d &beta);
+	void recalculateSegments(const std::array<std::shared_ptr<Tube>, 3> &Tb, const blaze::StaticVector<double, 3UL> &beta);
 
 	// getter method for retrieving the transition points defining the boundaries of all CTR segments
 	std::vector<double> get_S();
@@ -71,5 +71,5 @@ public:
 	returnParameters();
 
 	// getter method for retrieving the arc-lengths of each tube's distal end
-	vec3d getDistEnd();
+	blaze::StaticVector<double, 3UL> getDistEnd();
 };

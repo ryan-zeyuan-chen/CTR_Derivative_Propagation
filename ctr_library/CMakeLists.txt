@@ -11,4 +11,4 @@ set(CTR_LIB_SOURCES
 add_library(CTRlib STATIC ${CTR_LIB_SOURCES})
 target_include_directories(CTRlib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # linking the library dependency on the NLOPT optimization and math libraries
-# target_link_libraries(CTRlib PRIVATE nlopt m)
+target_link_libraries(CTRlib PRIVATE nlopt m)

@@ -20,9 +20,6 @@
 #include <tuple>
 #include <chrono>
 
-// 2-dimensional vector for u_{x,y} BC
-typedef blaze::StaticVector<double, 2UL> vec2d;
-
 class CTR
 {
 public:
@@ -91,34 +88,34 @@ public:
 	void setDistalWrench(const blaze::StaticVector<double, 3UL> &f, const blaze::StaticVector<double, 3UL> &m);
 
 	// function that implements the position control ==> returns [u_0, Jac, q_min, timeout]
-	std::tuple<blaze::StaticMatrix<double, 3UL, 6UL>, blaze::StaticVector<double, 6UL>, bool> posCTRL(blaze::StaticVector<double, 5UL> &initGuess, const vec3d &target, const double Tol);
+	bool posCTRL(blaze::StaticVector<double, 5UL> &initGuess, const blaze::StaticVector<double, 3UL> &target, const double Tol);
 	
 	// returns the arc-length of the backbone which is the closest point to the renal pyramic
-	double returnArcLength(const vec3d &calyx);
+	double returnArcLength(const blaze::StaticVector<double, 3UL> &calyx);
 
 	// getter method for retrieving the torsional curvatures at proximal end of the CTR (s = 0)
-	vec3d getProximalTwist();
+	blaze::StaticVector<double, 3UL> getProximalTwist();
 
 	// getter method for retrieving the torsional curvatures at the last available CTR segment
-	vec3d getDistalTwist();
+	blaze::StaticVector<double, 3UL> getDistalTwist();
 
 	// function that returns the Vector of tubes comprising the CTR
 	std::array<std::shared_ptr<Tube>, 3UL> getTubes();
 
 	// function that returns the current linear joint values of the CTR
-	vec3d getBeta();
+	blaze::StaticVector<double, 3UL> getBeta();
 
 	// function that returns the current joint values of the CTR
 	blaze::StaticVector<double, 6UL> getConfiguration();
 
 	// function that returns the position of the CTR tip
-	vec3d getTipPos();
+	blaze::StaticVector<double, 3UL> getTipPos();
 
 	// function that returns the arc-lenghts of each tube's distal end
-	vec3d getDistalEnds(); 
+	blaze::StaticVector<double, 3UL> getDistalEnds(); 
 
 	// function that returns the individual tube shapes
-	std::tuple<blaze::HybridMatrix<double, 3UL, 200UL, blaze::columnMajor>, blaze::HybridMatrix<double, 3UL, 200UL, blaze::columnMajor>, blaze::HybridMatrix<double, 3UL, 200UL, blaze::columnMajor>> getTubeShapes();
+	std::tuple<blaze::HybridMatrix<double, 3UL, 1000UL, blaze::columnMajor>, blaze::HybridMatrix<double, 3UL, 1000UL, blaze::columnMajor>, blaze::HybridMatrix<double, 3UL, 1000UL, blaze::columnMajor>> getTubeShapes();
 
 	// function that returns a vector with the CTR shape
 	std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> getShape();
@@ -148,14 +145,14 @@ private:
 	double m_accuracy;									// accuracy to which the BVP must be solved
 	mathOp::rootFindingMethod m_method;					// methods available: Newton-Raphson, Levenberg-Marquardt, Broyden
 	std::array<std::shared_ptr<Tube>, 3UL> m_Tubes; 	// Vector of tubes comprising the CTR
-	vec3d m_beta;										// linear actuation
+	blaze::StaticVector<double, 3UL> m_beta;			// linear actuation
 	blaze::StaticVector<double, 6UL> m_q;				// joint actuation values
-	vec3d m_theta_0;									// initial twist angle for all tubes at s = 0
-	vec3d m_wf;											// external force at the CTR tip (force component of the external wrench)
-	vec3d m_wm;											// external moment at the CTR tip (moment component of the external wrench
-	vec3d m_e3;											// third canonical basis of R^3
+	blaze::StaticVector<double, 3UL> m_theta_0;			// initial twist angle for all tubes at s = 0
+	blaze::StaticVector<double, 3UL> m_wf;				// external force at the CTR tip (force component of the external wrench)
+	blaze::StaticVector<double, 3UL> m_wm;				// external moment at the CTR tip (moment component of the external wrench
+	blaze::StaticVector<double, 3UL> m_e3;				// third canonical basis of R^3
 	std::unique_ptr<Segment> m_segment;					// segments between transition points in the CTR
-	vec3d m_r_0;										// origin of the local frame at s = 0 or at the end of the i-th segment (for BC)
+	blaze::StaticVector<double, 3UL> m_r_0;				// origin of the local frame at s = 0 or at the end of the i-th segment (for BC)
 	blaze::StaticVector<double, 4UL> m_h_0;				// initial orientation of local frame at s = 0 (or at the end of the i-th segment (for BC)) ==>> QUATERNION
 	std::vector<state_type> m_y;						// stores the CTR state vector at each integration step
 	std::vector<double> m_s;							// stores the arc-length points along the backbone

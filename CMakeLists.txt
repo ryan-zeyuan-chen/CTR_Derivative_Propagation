@@ -11,9 +11,29 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 # addind the library and main executable directories to the project tree
 add_subdirectory(ctr_library) # static CTR library
 add_subdirectory(executable)  # main executable
+
+# Sets and enables OpenMP parallel optimization in case OpenMP is available
+find_package(OpenMP REQUIRED)
+if(OpenMP_FOUND)
+    message("OpenMP found")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
+# Set number of threads
+if(DEFINED ENV{OMP_NUM_THREADS})
+    set(OMP_NUM_THREADS $ENV{OMP_NUM_THREADS})
+else()
+    set(OMP_NUM_THREADS 8)
+endif()
+add_definitions(-DOMP_NUM_THREADS=${OMP_NUM_THREADS})
 
 set(Boost_USE_STATIC_LIBS        ON)  # only find static libs
 set(Boost_USE_DEBUG_LIBS        OFF)  # ignore debug libs and
@@ -74,17 +94,6 @@ if( blaze_FOUND )
 elseif(NOT Blaze_FOUND)
     error(STATUS "Blaze has not been found!")
 endif()
-
-# # Check for the OpenIGTLink libray. If found, print message, include dirs, and link libraries.
-# set(OpenIGTLink_DIR "/usr/local/lib/igtl/cmake/igtl-3.1/")
-# find_package(OpenIGTLink REQUIRED PATHS OpenIGTLink_DIR)
-# if( OpenIGTLink_FOUND )
-#    message(STATUS "OpenIGTLink has been found!")
-#    target_include_directories(${PROJECT_NAME} PUBLIC ${OpenIGTLink_USE_FILE})
-#    target_link_libraries(${PROJECT_NAME} PUBLIC OpenIGTLink)
-# elseif(NOT OpenIGTLink_FOUND)
-#     error(STATUS "OpenIGTLink has not been found!")
-# endif()
 
 # Check for the TBB libray. If found, print message, include dirs, and link libraries.
 find_package(TBB REQUIRED)

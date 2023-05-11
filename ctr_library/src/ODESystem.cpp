@@ -5,17 +5,17 @@
 // default constructor
 ODESystem::ODESystem()
 {
-	m_u_ast_x = 0.0;
-	m_u_ast_y = 0.0;
-	m_EI = 0.0;
-	m_GJ = 0.0;
-	m_e3 = 0.0;
-	m_f = 0.0;
-	m_V = 0.0;
-	m_E = 0.0;
-	m_Vs = 0.0;
-	m_Es = 0.0;
-	m_e3 = {0, 0, 1};
+	m_u_ast_x = 0.00;
+	m_u_ast_y = 0.00;
+	m_EI = 0.00;
+	m_GJ = 0.00;
+	m_e3 = 0.00;
+	m_f = 0.00;
+	m_V = 0.00;
+	m_E = 0.00;
+	m_Vs = 0.00;
+	m_Es = 0.00;
+	m_e3 = {0.00, 0.00, 1.00};
 }
 
 // copy constructor
@@ -95,19 +95,22 @@ void ODESystem::operator()(const state_type &y, state_type &dyds, const double s
 	// next 3 elements of y are twist angles, theta_i = [theta_1  theta_2  theta_3]
 	// last 7 elements are r(position) and h(quaternion-orientations) of the local frame, respectively at each arc-length s
 
-	double theta_2 = y[6UL], dtheta_2 = y[3UL] - y[2UL];
-	double theta_3 = y[7UL], dtheta_3 = y[4UL] - y[2UL];
+	double dtheta_2 = y[3UL] - y[2UL];
+	double dtheta_3 = y[4UL] - y[2UL];
+
+	blaze::StaticMatrix<double, 3UL, 3UL, blaze::columnMajor> R1(mathOp::rotz(y[5UL])), R2(mathOp::rotz(y[6UL])), R3(mathOp::rotz(y[7UL]));
 
 	// implementing curvature equation u_i = transpose(R_z(theta_i))*u_1 + \dot{theta_i}*e3
-	vec3d u1, u2, u3;
+	blaze::StaticVector<double, 3UL> u1, u2, u3;
+
 	u1 = blaze::subvector<0UL, 3UL>(y);
-	u2 = mathOp::transposePreMultiply(mathOp::rotz(theta_2), u1) + dtheta_2 * m_e3;
-	u3 = mathOp::transposePreMultiply(mathOp::rotz(theta_3), u1) + dtheta_3 * m_e3;
+	u2 = blaze::trans(R2) * u1 + (dtheta_2 * m_e3);
+	u3 = blaze::trans(R3) * u1 + (dtheta_3 * m_e3);
 
 	// computing the twist curvatures (uz_i) and twist angles (theta_i)
 	auto computeTwists = [&](size_t idx, const blaze::StaticVector<double, 3UL> &u)
 	{
-		if (m_GJ[idx] != 0.0)
+		if (m_GJ[idx] != 0.00)
 		{
 			// uz_i = ( (E_i * I_i) / (G_i * J_i) ) * (ux_i * uy_ast - uy_i * ux_ast)
 			dyds[2 + idx] = (m_EI[idx] / m_GJ[idx]) * (u[0UL] * m_u_ast_y[idx] - u[1UL] * m_u_ast_x[idx]);
@@ -115,7 +118,7 @@ void ODESystem::operator()(const state_type &y, state_type &dyds, const double s
 			dyds[5 + idx] = u[2UL] - u1[2UL];
 		}
 		else
-			dyds[2 + idx] = dyds[5 + idx] = 0.0;
+			dyds[2 + idx] = dyds[5 + idx] = 0.00;
 	};
 
 	computeTwists(0UL, u1);
@@ -123,20 +126,17 @@ void ODESystem::operator()(const state_type &y, state_type &dyds, const double s
 	computeTwists(2UL, u3);
 
 	// computing curvature of the first tube along the x and y directions
-	blaze::StaticMatrix<double, 3UL, 3UL> R1, R2, R3, dR2_dtheta, dR3_dtheta; // dR1_dtheta, dR2_dtheta, dR3_dtheta;
+	blaze::StaticMatrix<double, 3UL, 3UL> dR2_dtheta, dR3_dtheta; // dR1_dtheta, dR2_dtheta, dR3_dtheta;
 	blaze::DiagonalMatrix<blaze::StaticMatrix<double, 3UL, 3UL, blaze::rowMajor>> K_inv, K1, K2, K3;
-	K_inv(0UL, 0UL) = K_inv(1UL, 1UL) = 1 / blaze::sum(m_EI);
-	K_inv(2UL, 2UL) = 1 / blaze::sum(m_GJ);
+	K_inv(0UL, 0UL) = K_inv(1UL, 1UL) = 1.00 / blaze::sum(m_EI);
+	K_inv(2UL, 2UL) = 1.00 / blaze::sum(m_GJ);
 
-	R1 = mathOp::rotz(y[5UL]);
-	R2 = mathOp::rotz(y[6UL]);
-	R3 = mathOp::rotz(y[7UL]);
 	// dR1_dtheta = mathOp::dRz_dTheta(y[5UL]);
 	dR2_dtheta = mathOp::dRz_dTheta(y[6UL]);
 	dR3_dtheta = mathOp::dRz_dTheta(y[7UL]);
 
 	// du_i = R(theta_i) * (K_i * d_Theta_i * d_R(theta_i)' * u_1 + u_i^ * K_i * (u_i - u_i_ast)
-	vec3d du_1, du_2, du_3, u1_ast, u2_ast, u3_ast, Du;
+	blaze::StaticVector<double, 3UL> du_1, du_2, du_3, u1_ast, u2_ast, u3_ast, Du;
 	// partial component due to tube 1
 	blaze::diagonal(K1) = {m_EI[0UL], m_EI[0UL], m_GJ[0UL]};
 	u1_ast = {m_u_ast_x[0UL], m_u_ast_y[0UL], 0.0};
@@ -145,19 +145,18 @@ void ODESystem::operator()(const state_type &y, state_type &dyds, const double s
 	// partial component due to tube 2
 	blaze::diagonal(K2) = {m_EI[1UL], m_EI[1UL], m_GJ[1UL]};
 	u2_ast = {m_u_ast_x[1UL], m_u_ast_y[1UL], 0.0};
-	du_2 = mathOp::rotz(y[6UL]) * (K2 * dyds[6UL] * mathOp::transposePreMultiply(dR2_dtheta, u1) + mathOp::hatPreMultiply(u2, K2) * (u2 - u2_ast));
+	du_2 = mathOp::rotz(y[6UL]) * (K2 * dyds[6UL] * blaze::trans(dR2_dtheta) * u1 + mathOp::hatPreMultiply(u2, K2) * (u2 - u2_ast));
 
 	// partial component due to tube 3
 	blaze::diagonal(K3) = {m_EI[2UL], m_EI[2UL], m_GJ[2UL]};
 	u3_ast = {m_u_ast_x[2UL], m_u_ast_y[2UL], 0.0};
-	du_3 = mathOp::rotz(y[7UL]) * (K3 * dyds[7UL] * mathOp::transposePreMultiply(dR3_dtheta, u1) + mathOp::hatPreMultiply(u3, K3) * (u3 - u3_ast));
+	du_3 = mathOp::rotz(y[7UL]) * (K3 * dyds[7UL] * blaze::trans(dR3_dtheta) * u1 + mathOp::hatPreMultiply(u3, K3) * (u3 - u3_ast));
 
 	// R (orientation) of the local frame at arc-length s
-	blaze::StaticMatrix<double, 3UL, 3UL> R;
-	mathOp::getSO3(blaze::subvector<11UL, 4UL>(y), R);
+	mathOp::getSO3(blaze::subvector<11UL, 4UL>(y), R1);
 
 	// Equilibrium bending curvature along x, y
-	Du = -K_inv * ((du_1 + du_2 + du_3) + mathOp::hatPreMultiply(m_e3, blaze::trans(R)) * m_f);
+	Du = -K_inv * ((du_1 + du_2 + du_3) + mathOp::hatPreMultiply(m_e3, blaze::trans(R1)) * m_f);
 
 	// curvature of tube 1 along the x and y directions
 	blaze::subvector<0UL, 2UL>(dyds) = blaze::subvector<0UL, 2UL>(Du);
@@ -166,7 +165,7 @@ void ODESystem::operator()(const state_type &y, state_type &dyds, const double s
 	blaze::subvector<11UL, 4UL>(dyds) = mathOp::quaternionDiff(u1, blaze::subvector<11UL, 4UL>(y));
 
 	// calculating r_dot
-	blaze::subvector<8UL, 3UL>(dyds) = blaze::column<2UL>(R); // r_dot = R * e3
+	blaze::subvector<8UL, 3UL>(dyds) = blaze::column<2UL>(R1); // r_dot = R * e3
 
 	/*
 	==================================================================================================================================
@@ -194,28 +193,28 @@ void ODESystem::operator()(const state_type &y, state_type &dyds, const double s
 	// ==>> MATRIX V_s <<==
 	blaze::StaticMatrix<double, 3UL, 3UL> dR1_dxk;
 	blaze::StaticMatrix<double, 3UL, 6UL> O_I;
-	O_I(0UL, 3UL) = O_I(1UL, 4UL) = O_I(2UL, 5UL) = 1.0;
+	O_I(0UL, 3UL) = O_I(1UL, 4UL) = O_I(2UL, 5UL) = 1.00;
 
 	blaze::StaticVector<double, 3UL> du1_dxk, du2_dxk, du3_dxk, df_dfi;
 	double dTheta2Dot_dxk, dTheta3Dot_dxk, du1z_dxk, du2z_dxk, du3z_dxk;
 
 	auto setDyDs = [&](size_t col, const blaze::StaticVector<double, 3UL> &df_dfi)
 	{
-		dR1_dxk = mathOp::hatPreMultiply(O_I * blaze::column(m_E, col), R);														  // d_R1/d_xk
-		dTheta2Dot_dxk = m_V(5UL, col) - m_V(4UL, col);																			  // d_theta2Dot/d_xk
-		dTheta3Dot_dxk = m_V(6UL, col) - m_V(4UL, col);																			  // d_theta3Dot/d_xk
-		du1_dxk = {m_V(2UL, col), m_V(3UL, col), m_V(4UL, col)};																  // d_u1/d_xk
-		du2_dxk = m_V(0UL, col) * blaze::trans(dR2_dtheta) * u1 + blaze::trans(R2) * du1_dxk + dTheta2Dot_dxk * m_e3;			  // d_u2/d_xk
-		du3_dxk = m_V(1UL, col) * blaze::trans(dR3_dtheta) * u1 + blaze::trans(R3) * du1_dxk + dTheta3Dot_dxk * m_e3;			  // d_u3/d_xk
-		du1z_dxk = (m_GJ[0UL] > 0.0) ? (m_EI[0UL] / m_GJ[0UL]) * (du1_dxk[0UL] * u1_ast[1UL] - du1_dxk[1UL] * u1_ast[0UL]) : 0.0; // du1z/d_xk
-		du2z_dxk = (m_GJ[1UL] > 0.0) ? (m_EI[1UL] / m_GJ[1UL]) * (du2_dxk[0UL] * u2_ast[1UL] - du2_dxk[1UL] * u2_ast[0UL]) : 0.0; // du2z/d_xk
-		du3z_dxk = (m_GJ[2UL] > 0.0) ? (m_EI[2UL] / m_GJ[2UL]) * (du3_dxk[0UL] * u3_ast[1UL] - du3_dxk[1UL] * u3_ast[0UL]) : 0.0; // du3z/d_xk
+		dR1_dxk = mathOp::hatPreMultiply(O_I * blaze::column(m_E, col), R1);														// d_R1/d_xk
+		dTheta2Dot_dxk = m_V(5UL, col) - m_V(4UL, col);																				// d_theta2Dot/d_xk
+		dTheta3Dot_dxk = m_V(6UL, col) - m_V(4UL, col);																				// d_theta3Dot/d_xk
+		du1_dxk = {m_V(2UL, col), m_V(3UL, col), m_V(4UL, col)};																	// d_u1/d_xk
+		du2_dxk = m_V(0UL, col) * blaze::trans(dR2_dtheta) * u1 + blaze::trans(R2) * du1_dxk + dTheta2Dot_dxk * m_e3;				// d_u2/d_xk
+		du3_dxk = m_V(1UL, col) * blaze::trans(dR3_dtheta) * u1 + blaze::trans(R3) * du1_dxk + dTheta3Dot_dxk * m_e3;				// d_u3/d_xk
+		du1z_dxk = (m_GJ[0UL] > 0.00) ? (m_EI[0UL] / m_GJ[0UL]) * (du1_dxk[0UL] * u1_ast[1UL] - du1_dxk[1UL] * u1_ast[0UL]) : 0.00; // du1z/d_xk
+		du2z_dxk = (m_GJ[1UL] > 0.00) ? (m_EI[1UL] / m_GJ[1UL]) * (du2_dxk[0UL] * u2_ast[1UL] - du2_dxk[1UL] * u2_ast[0UL]) : 0.00; // du2z/d_xk
+		du3z_dxk = (m_GJ[2UL] > 0.00) ? (m_EI[2UL] / m_GJ[2UL]) * (du3_dxk[0UL] * u3_ast[1UL] - du3_dxk[1UL] * u3_ast[0UL]) : 0.00; // du3z/d_xk
 
 		du_1 = dR1_dxk * mathOp::hatPreMultiply(u1, K1) * (u1 - u1_ast) + R1 * (mathOp::hatPreMultiply(du1_dxk, K1) * (u1 - u1_ast) + mathOp::hatPreMultiply(u1, K1) * du1_dxk);
 		du_2 = dTheta2Dot_dxk * dR2_dtheta * (K2 * dyds[6UL] * blaze::trans(dR2_dtheta) * u1 + mathOp::hatPreMultiply(u2, K2) * (u2 - u2_ast)) + R2 * (mathOp::hatPreMultiply(du2_dxk, K2) * (u2 - u2_ast) + mathOp::hatPreMultiply(u2, K2) * du2_dxk);
 		du_3 = dTheta3Dot_dxk * dR3_dtheta * (K3 * dyds[7UL] * blaze::trans(dR3_dtheta) * u1 + mathOp::hatPreMultiply(u3, K3) * (u3 - u3_ast)) + R3 * (mathOp::hatPreMultiply(du3_dxk, K3) * (u3 - u3_ast) + mathOp::hatPreMultiply(u3, K3) * du3_dxk);
 
-		Du = -K_inv * ((du_1 + du_2 + du_3) + mathOp::hatPreMultiply(m_e3, blaze::trans(dR1_dxk)) * m_f + mathOp::hatPreMultiply(m_e3, blaze::trans(R)) * df_dfi); // du1Dot_xy/d_xk
+		Du = -K_inv * ((du_1 + du_2 + du_3) + mathOp::hatPreMultiply(m_e3, blaze::trans(dR1_dxk)) * m_f + mathOp::hatPreMultiply(m_e3, blaze::trans(R1)) * df_dfi); // du1Dot_xy/d_xk
 
 		blaze::column(m_Vs, col) = {dTheta2Dot_dxk, dTheta3Dot_dxk, Du[0UL], Du[1UL], du1z_dxk, du2z_dxk, du3z_dxk};
 	};
@@ -267,9 +266,9 @@ void ODESystem::operator()(const state_type &y, state_type &dyds, const double s
 	blaze::StaticMatrix<double, 6UL, 17UL> dXi_dyTimesV;
 
 	// building the adjoint matrix
-	blaze::submatrix<0UL, 0UL, 3UL, 3UL>(Ad_g) = R;
-	blaze::submatrix<3UL, 3UL, 3UL, 3UL>(Ad_g) = R;
-	blaze::submatrix<0UL, 3UL, 3UL, 3UL>(Ad_g) = mathOp::hatPreMultiply(blaze::subvector<8UL, 3UL>(y), R);
+	blaze::submatrix<0UL, 0UL, 3UL, 3UL>(Ad_g) = R1;
+	blaze::submatrix<3UL, 3UL, 3UL, 3UL>(Ad_g) = R1;
+	blaze::submatrix<0UL, 3UL, 3UL, 3UL>(Ad_g) = mathOp::hatPreMultiply(blaze::subvector<8UL, 3UL>(y), R1);
 	// building the matrix dXi_dyTimesV
 	blaze::submatrix<3UL, 0UL, 3UL, 17UL>(dXi_dyTimesV) = blaze::submatrix<2UL, 0UL, 3UL, 17UL>(this->m_V);
 	// computing Es = Ad_g * dXi_dyTimesV
@@ -285,14 +284,18 @@ void ODESystem::operator()(const state_type &y, state_type &dyds, const double s
 	blaze::subvector<117UL, 17UL>(dyds) = blaze::trans(blaze::row<6UL>(this->m_Vs));
 
 	// Packing the matrix Es
-	blaze::subvector<134UL, 51UL>(dyds) = 0.0;
+	blaze::subvector<134UL, 51UL>(dyds) = 0.00;
 	blaze::subvector<185UL, 17UL>(dyds) = blaze::trans(blaze::row<3UL>(this->m_Es));
 	blaze::subvector<202UL, 17UL>(dyds) = blaze::trans(blaze::row<4UL>(this->m_Es));
 	blaze::subvector<219UL, 17UL>(dyds) = blaze::trans(blaze::row<5UL>(this->m_Es));
 }
 
 // setter method for updating the parameters forward kinematics computation
-void ODESystem::setEquationParameters(const vec3d &u_ast_x, const vec3d &u_ast_y, const vec3d &EI, const vec3d &GJ, const vec3d& force)
+void ODESystem::setEquationParameters(const blaze::StaticVector<double, 3UL> &u_ast_x,
+									  const blaze::StaticVector<double, 3UL> &u_ast_y,
+									  const blaze::StaticVector<double, 3UL> &EI,
+									  const blaze::StaticVector<double, 3UL> &GJ,
+									  const blaze::StaticVector<double, 3UL> &force)
 {
 	this->m_u_ast_x = u_ast_x;
 	this->m_u_ast_y = u_ast_y;

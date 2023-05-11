@@ -3,7 +3,6 @@
 #include <blaze/Math.h>
 #include <vector>
 
-typedef blaze::StaticVector<double, 3UL> vec3d;
 typedef blaze::StaticVector<double, 236UL> state_type;
 
 class Observer

@@ -4,7 +4,7 @@
 #include <algorithm>
 
 // overloaded constructor
-Segment::Segment(const std::array<std::shared_ptr<Tube>, 3UL> &Tb, const vec3d &beta)
+Segment::Segment(const std::array<std::shared_ptr<Tube>, 3UL> &Tb, const blaze::StaticVector<double, 3UL> &beta)
 {
 	this->recalculateSegments(Tb, beta);
 }
@@ -69,7 +69,7 @@ Segment &Segment::operator=(Segment &&rhs) noexcept
 }
 
 // implements a functor to overload the constructors signature and allow recalculation of the CTR segmentation
-void Segment::recalculateSegments(const std::array<std::shared_ptr<Tube>, 3UL> &Tb, const vec3d &beta)
+void Segment::recalculateSegments(const std::array<std::shared_ptr<Tube>, 3UL> &Tb, const blaze::StaticVector<double, 3UL> &beta)
 {
 	// vector of overall length of each tube
 	std::array<double, 3UL> tb_len;
@@ -86,8 +86,14 @@ void Segment::recalculateSegments(const std::array<std::shared_ptr<Tube>, 3UL> &
 		this->m_len_curv[i] = this->m_dist_end[i] - Tb[i]->getCurvLen();
 	}
 
+	const double TOLERANCE = 1.00E-7;
+	auto compare = [&](double a, double b) -> bool
+	{
+		return std::fabs(a - b) < TOLERANCE;
+	};
+
 	// listing all landmark points at tube segment transitions (s >= 0)
-	this->m_S.push_back(0.0);
+	this->m_S.push_back(0.00);
 	// inserting m_len_curv array into landmarks
 	this->m_S.insert(this->m_S.end(), this->m_len_curv.begin(), this->m_len_curv.end());
 	// inserting m_dist_end array into landmarks
@@ -95,52 +101,52 @@ void Segment::recalculateSegments(const std::array<std::shared_ptr<Tube>, 3UL> &
 	// sorting the landmark points
 	std::sort(this->m_S.begin(), this->m_S.end());
 	// acquiring the unique landmark points only
-	auto it = std::unique(this->m_S.begin(), this->m_S.end(), [](double x, double y)
-						  { return std::abs(x - y) < 1e-7; }); // unique elements with a 0.0001mm tolerance
+	auto it = std::unique(this->m_S.begin(), this->m_S.end(), compare); // tolerance used to allow for small differences due to precision limitations
+	
 	// deleting any repeated elements
 	this->m_S.erase(it, this->m_S.end());
 
 	// total number of segments in the current CTR configuration (transition points - 1)
-	size_t len = this->m_S.size() - 1;
+	size_t len = this->m_S.size() - 1UL;
 	// Alocatting memory space for the output matrices
-	this->m_EI.resize(3, len, false);
-	this->m_GJ.resize(3, len, false);
-	this->m_U_x.resize(3, len, false);
-	this->m_U_y.resize(3, len, false);
+	this->m_EI.resize(3UL, len, false);
+	this->m_GJ.resize(3UL, len, false);
+	this->m_U_x.resize(3UL, len, false);
+	this->m_U_y.resize(3UL, len, false);
 	// filling matrices with defaul zero values
-	this->m_EI = this->m_GJ = this->m_U_x = this->m_U_y = 0.0;
+	this->m_EI = this->m_GJ = this->m_U_x = this->m_U_y = 0.00;
 
 	size_t b, c, span;
 	double element;
 	std::vector<double>::iterator it_b, it_c;
+
 	// determining the indexes correponding to tube transitions
 	for (size_t i = 0UL; i < 3UL; ++i)
 	{
 		// transition points (straight -> curved sections)
 		element = this->m_len_curv[i];
+		// finds where curved section of the i-th starts
+		it_b = std::lower_bound(this->m_S.begin(), this->m_S.end(), element - TOLERANCE); // tolerance used to allow for small differences due to precision limitations
 
-		it_b = std::find_if(this->m_S.begin(), this->m_S.end(), [&element](double x)
-							{ return (std::abs(x - element) <= 1e-7) ? true : false; }); // finds where tube curve starts (0.0001mm tolerance)
-
-		// distal ends
+		// transition points -> distal ends
 		element = m_dist_end[i];
-		it_c = std::find_if(this->m_S.begin(), this->m_S.end(), [&element](double x)
-							{ return (std::abs(x - element) <= 1e-7) ? true : false; }); // finds where tube ends (0.0001mm tolerance)
+		// finds where i-th tube ends
+		it_c = std::lower_bound(this->m_S.begin(), this->m_S.end(), element - TOLERANCE); // tolerance used to allow for small differences due to precision limitations
 
 		b = std::distance(this->m_S.begin(), it_b);
 		c = std::distance(this->m_S.begin(), it_c);
 
 		// populating the output matrices accordingly
-		blaze::submatrix(this->m_EI, i, 0, 1, c) = Tb[i]->getK(1); // bending stiffness
-		blaze::submatrix(this->m_GJ, i, 0, 1, c) = Tb[i]->getK(3); // torsional stiffness
+		blaze::submatrix(this->m_EI, i, 0UL, 1UL, c) = Tb[i]->getK(1); // bending stiffness
+		blaze::submatrix(this->m_GJ, i, 0UL, 1UL, c) = Tb[i]->getK(3); // torsional stiffness
 
 		// only load the curvatures when the tubes have a curved section
 		if (b != c)
 		{
 			span = c - b;
 			// loading the precurvatures along the x and y directionss
-			blaze::submatrix(this->m_U_x, i, b, 1, span) = Tb[i]->get_u_ast(1); // precurvature along the x direction
-			blaze::submatrix(this->m_U_y, i, b, 1, span) = Tb[i]->get_u_ast(2); // precurvature along the x direction
+			blaze::submatrix(this->m_U_x, i, b, 1UL, span) = Tb[i]->get_u_ast(1); // precurvature along the x direction
+			blaze::submatrix(this->m_U_y, i, b, 1UL, span) = Tb[i]->get_u_ast(2); // precurvature along the y direction
 		}
 	}
 }
@@ -154,7 +160,7 @@ std::vector<double> Segment::get_S()
 // getter method for returning the distal ends of all CTR tubes
 blaze::StaticVector<double, 3UL> Segment::getDistalEnds()
 {
-	blaze::StaticVector<double, 3UL> distalEnds = { this->m_dist_end[0UL], this->m_dist_end[1UL], this->m_dist_end[2UL] };
+	blaze::StaticVector<double, 3UL> distalEnds = {this->m_dist_end[0UL], this->m_dist_end[1UL], this->m_dist_end[2UL]};
 	return distalEnds;
 }
 
@@ -195,8 +201,8 @@ Segment::returnParameters()
 }
 
 // getter method for retrieving the arc-lengths of each tube's distal end
-vec3d Segment::getDistEnd()
+blaze::StaticVector<double, 3UL> Segment::getDistEnd()
 {
-	vec3d res = {this->m_dist_end[0UL], this->m_dist_end[1UL], this->m_dist_end[2UL]};
+	blaze::StaticVector<double, 3UL> res = {this->m_dist_end[0UL], this->m_dist_end[1UL], this->m_dist_end[2UL]};
 	return res;
 }
