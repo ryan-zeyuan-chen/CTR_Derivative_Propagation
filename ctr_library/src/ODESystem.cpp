@@ -191,16 +191,19 @@ void ODESystem::operator()(const state_type &y, state_type &dyds, const double s
 	blaze::row<5UL>(this->m_E) = blaze::trans(blaze::subvector<219UL, 17UL>(y));
 
 	// ==>> MATRIX V_s <<==
-	blaze::StaticMatrix<double, 3UL, 3UL> dR1_dxk;
+	blaze::StaticMatrix<double, 3UL, 3UL> dR1_dxk, dR2_dxk, dR3_dxk;
 	blaze::StaticMatrix<double, 3UL, 6UL> O_I;
 	O_I(0UL, 3UL) = O_I(1UL, 4UL) = O_I(2UL, 5UL) = 1.00;
 
 	blaze::StaticVector<double, 3UL> du1_dxk, du2_dxk, du3_dxk, df_dfi;
 	double dTheta2Dot_dxk, dTheta3Dot_dxk, du1z_dxk, du2z_dxk, du3z_dxk;
+	blaze::StaticMatrix<double, 3UL, 3UL> dR2_dtheta_dxk, dR3_dtheta_dxk;
 
 	auto setDyDs = [&](size_t col, const blaze::StaticVector<double, 3UL> &df_dfi)
 	{
-		dR1_dxk = mathOp::hatPreMultiply(O_I * blaze::column(m_E, col), R1);														// d_R1/d_xk
+		dR1_dxk = mathOp::hatPreMultiply(O_I * blaze::column(m_E, col), R1);
+		dR2_dxk = mathOp::hatPreMultiply(O_I * blaze::column(m_E, col), R2);
+		dR3_dxk = mathOp::hatPreMultiply(O_I * blaze::column(m_E, col), R3);														// d_R1/d_xk
 		dTheta2Dot_dxk = m_V(5UL, col) - m_V(4UL, col);																				// d_theta2Dot/d_xk
 		dTheta3Dot_dxk = m_V(6UL, col) - m_V(4UL, col);																				// d_theta3Dot/d_xk
 		du1_dxk = {m_V(2UL, col), m_V(3UL, col), m_V(4UL, col)};																	// d_u1/d_xk
@@ -209,10 +212,12 @@ void ODESystem::operator()(const state_type &y, state_type &dyds, const double s
 		du1z_dxk = (m_GJ[0UL] > 0.00) ? (m_EI[0UL] / m_GJ[0UL]) * (du1_dxk[0UL] * u1_ast[1UL] - du1_dxk[1UL] * u1_ast[0UL]) : 0.00; // du1z/d_xk
 		du2z_dxk = (m_GJ[1UL] > 0.00) ? (m_EI[1UL] / m_GJ[1UL]) * (du2_dxk[0UL] * u2_ast[1UL] - du2_dxk[1UL] * u2_ast[0UL]) : 0.00; // du2z/d_xk
 		du3z_dxk = (m_GJ[2UL] > 0.00) ? (m_EI[2UL] / m_GJ[2UL]) * (du3_dxk[0UL] * u3_ast[1UL] - du3_dxk[1UL] * u3_ast[0UL]) : 0.00; // du3z/d_xk
+		dR2_dtheta_dxk = {{-cos(y[6UL]) * m_V(0UL, col), sin(y[6UL]) * m_V(0UL, col), 0.00}, {-sin(y[6UL]) * m_V(0UL, col), -cos(y[6UL]) * m_V(0UL, col), 0.00}, {0.00, 0.00, 0.00}};
+		dR3_dtheta_dxk = {{-cos(y[7UL]) * m_V(1UL, col), sin(y[7UL]) * m_V(1UL, col), 0.00}, {-sin(y[7UL]) * m_V(1UL, col), -cos(y[7UL]) * m_V(1UL, col), 0.00}, {0.00, 0.00, 0.00}};
 
 		du_1 = dR1_dxk * mathOp::hatPreMultiply(u1, K1) * (u1 - u1_ast) + R1 * (mathOp::hatPreMultiply(du1_dxk, K1) * (u1 - u1_ast) + mathOp::hatPreMultiply(u1, K1) * du1_dxk);
-		du_2 = dTheta2Dot_dxk * dR2_dtheta * (K2 * dyds[6UL] * blaze::trans(dR2_dtheta) * u1 + mathOp::hatPreMultiply(u2, K2) * (u2 - u2_ast)) + R2 * (mathOp::hatPreMultiply(du2_dxk, K2) * (u2 - u2_ast) + mathOp::hatPreMultiply(u2, K2) * du2_dxk);
-		du_3 = dTheta3Dot_dxk * dR3_dtheta * (K3 * dyds[7UL] * blaze::trans(dR3_dtheta) * u1 + mathOp::hatPreMultiply(u3, K3) * (u3 - u3_ast)) + R3 * (mathOp::hatPreMultiply(du3_dxk, K3) * (u3 - u3_ast) + mathOp::hatPreMultiply(u3, K3) * du3_dxk);
+		du_2 = dR2_dxk * (K2 * dyds[6UL] * blaze::trans(dR2_dtheta) * u1 + mathOp::hatPreMultiply(u2, K2) * (u2 - u2_ast)) + R2 * (K2 * dTheta2Dot_dxk * blaze::trans(dR2_dtheta) * u1 + K2 * dyds[6UL] * blaze::trans(dR2_dtheta_dxk) * u1 + K2 * dyds[6UL] * blaze::trans(dR2_dtheta) * du1_dxk + mathOp::hatPreMultiply(du2_dxk, K2) * (u2 - u2_ast) + mathOp::hatPreMultiply(u2, K2) * du2_dxk);
+		du_3 = dR3_dxk * (K3 * dyds[7UL] * blaze::trans(dR3_dtheta) * u1 + mathOp::hatPreMultiply(u3, K3) * (u3 - u3_ast)) + R3 * (K3 * dTheta3Dot_dxk * blaze::trans(dR3_dtheta) * u1 + K3 * dyds[7UL] * blaze::trans(dR3_dtheta_dxk) * u1 + K3 * dyds[7UL] * blaze::trans(dR3_dtheta) * du1_dxk + mathOp::hatPreMultiply(du3_dxk, K3) * (u3 - u3_ast) + mathOp::hatPreMultiply(u3, K3) * du3_dxk);
 
 		Du = -K_inv * ((du_1 + du_2 + du_3) + mathOp::hatPreMultiply(m_e3, blaze::trans(dR1_dxk)) * m_f + mathOp::hatPreMultiply(m_e3, blaze::trans(R1)) * df_dfi); // du1Dot_xy/d_xk
 
