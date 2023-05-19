@@ -159,7 +159,7 @@ void CTR::reset(const blaze::StaticVector<double, 5UL> &initGuess)
 
 	blaze::row<1UL>(this->m_V0) = {-m_beta[2UL] * this->m_V0(6UL, 0UL) + uz_0[0UL] + m_beta[0UL] * this->m_V0(4UL, 0UL), // d_theta3/d_beta1
 								   -m_beta[2UL] * this->m_V0(6UL, 1UL) + m_beta[0UL] * this->m_V0(4UL, 1UL),			 // d_theta3/d_beta2
-								   -m_beta[2UL] * this->m_V0(6UL, 2UL) + m_beta[0UL] * this->m_V0(4UL, 2UL),			 // d_theta3/d_beta3
+								   -m_beta[2UL] * this->m_V0(6UL, 2UL) - uz_0[2UL] + m_beta[0UL] * this->m_V0(4UL, 2UL), // d_theta3/d_beta3
 								   -1.0 - m_beta[2UL] * this->m_V0(6UL, 3UL) + m_beta[0UL] * this->m_V0(4UL, 3UL),		 // d_theta3/d_alpha1
 								   -m_beta[2UL] * this->m_V0(6UL, 4UL) + m_beta[0UL] * this->m_V0(4UL, 4UL),			 // d_theta3/d_alpha2
 								   1.0 - m_beta[2UL] * this->m_V0(6UL, 5UL) + m_beta[0UL] * this->m_V0(4UL, 5UL),		 // d_theta3/d_alpha3
@@ -179,23 +179,23 @@ void CTR::reset(const blaze::StaticVector<double, 5UL> &initGuess)
 
 	blaze::row<3UL>(this->m_V0) = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0}; // d_u1y(0)/d_xk
 
-	blaze::row<4UL>(this->m_V0) = {(m_V0(1UL, 0UL) + m_V0(0UL, 0UL) + m_beta[1UL] * m_V0(5UL, 0UL) + m_beta[2UL] * m_V0(6UL, 0UL)) / (2 * m_beta[0UL]) - (m_theta_0[2UL] + m_theta_0[1UL] + 2 * m_q[3UL] - m_q[4UL] - m_q[5UL] + m_beta[1UL] * uz_0[1UL] + m_beta[2UL] * uz_0[2UL]) / (2 * m_beta[0UL] * m_beta[0UL]), // d_u1z/d_beta1
-								   (m_V0(1UL, 1UL) + m_V0(0UL, 1UL) + uz_0[1UL] + m_beta[1UL] * m_V0(5UL, 1UL) + m_beta[2UL] * m_V0(6UL, 1UL)) / (2 * m_beta[0UL]),																																					   // d_u1z/d_beta2
-								   (m_V0(1UL, 2UL) + m_V0(0UL, 2UL) + m_beta[1UL] * m_V0(5UL, 2UL) + uz_0[2UL] + m_beta[2UL] * m_V0(6UL, 2UL)) / (2 * m_beta[0UL]),																																					   // d_u1z/d_beta3
-								   (m_V0(1UL, 3UL) + m_V0(0UL, 3UL) + 2.0 + m_beta[1UL] * m_V0(5UL, 3UL) + m_beta[2UL] * m_V0(6UL, 3UL)) / (2 * m_beta[0UL]),																																						   // d_u1z/d_alpha1
-								   (m_V0(1UL, 4UL) + m_V0(0UL, 4UL) - 1.0 + m_beta[1UL] * m_V0(5UL, 4UL) + m_beta[2UL] * m_V0(6UL, 4UL)) / (2 * m_beta[0UL]),																																						   // d_u1z/d_alpha2
-								   (m_V0(1UL, 5UL) + m_V0(0UL, 5UL) - 1.0 + m_beta[1UL] * m_V0(5UL, 5UL) + m_beta[2UL] * m_V0(6UL, 5UL)) / (2 * m_beta[0UL]),																																						   // d_u1z/d_alpha3
-								   (m_V0(1UL, 6UL) + m_V0(0UL, 6UL) + m_beta[1UL] * m_V0(5UL, 6UL) + m_beta[2UL] * m_V0(6UL, 6UL)) / (2 * m_beta[0UL]),																																								   // d_u1z/d_wf1
-								   (m_V0(1UL, 7UL) + m_V0(0UL, 7UL) + m_beta[1UL] * m_V0(5UL, 7UL) + m_beta[2UL] * m_V0(6UL, 7UL)) / (2 * m_beta[0UL]),																																								   // d_u1z/d_wf2
-								   (m_V0(1UL, 8UL) + m_V0(0UL, 8UL) + m_beta[1UL] * m_V0(5UL, 8UL) + m_beta[2UL] * m_V0(6UL, 8UL)) / (2 * m_beta[0UL]),																																								   // d_u1z/d_wf3
-								   (m_V0(1UL, 9UL) + m_V0(0UL, 9UL) + m_beta[1UL] * m_V0(5UL, 9UL) + m_beta[2UL] * m_V0(6UL, 9UL)) / (2 * m_beta[0UL]),																																								   // d_u1z/d_wm1
-								   (m_V0(1UL, 10UL) + m_V0(0UL, 10UL) + m_beta[1UL] * m_V0(5UL, 10UL) + m_beta[2UL] * m_V0(6UL, 10UL)) / (2 * m_beta[0UL]),																																							   // d_u1z/d_wm2
-								   (m_V0(1UL, 11UL) + m_V0(0UL, 11UL) + m_beta[1UL] * m_V0(5UL, 11UL) + m_beta[2UL] * m_V0(6UL, 11UL)) / (2 * m_beta[0UL]),																																							   // d_u1z/d_wm3
-								   0.0,																																																																				   // d_u1z/d_u1x(0)
-								   0.0,																																																																				   // d_u1z/d_u1y(0)
-								   1.0,																																																																				   // d_u1z/d_u1z(0)
-								   (m_V0(1UL, 15UL) + m_V0(0UL, 15UL) + m_beta[1UL] + m_beta[2UL] * m_V0(6UL, 15UL)) / (2 * m_beta[0UL]),																																											   // d_u1z/d_u2z(0)
-								   (m_V0(1UL, 16UL) + m_V0(0UL, 16UL) + m_beta[1UL] * m_V0(5UL, 16UL) + m_beta[2UL]) / (2 * m_beta[0UL])};																																											   // d_u1z/d_u3z(0)
+	blaze::row<4UL>(this->m_V0) = {(m_V0(0UL, 0UL) + m_beta[1UL] * m_V0(5UL, 0UL)) / m_beta[0UL] - (m_theta_0[1UL] - m_q[4UL] + m_q[3UL] + m_beta[1UL] * uz_0[1UL]) / (m_beta[0UL] * m_beta[0UL]), // d_u1z/d_beta1
+								   (m_V0(0UL, 1UL) + uz_0[1UL] + m_beta[1UL] * m_V0(5UL, 1UL)) / m_beta[0UL],																					   // d_u1z/d_beta2
+								   (m_V0(0UL, 2UL) + m_beta[1UL] * m_V0(5UL, 2UL)) / m_beta[0UL],																								   // d_u1z/d_beta3
+								   (m_V0(0UL, 3UL) + 1.0 + m_beta[1UL] * m_V0(5UL, 3UL)) / m_beta[0UL],																							   // d_u1z/d_alpha1
+								   (m_V0(0UL, 4UL) - 1.0 + m_beta[1UL] * m_V0(5UL, 4UL)) / m_beta[0UL],																							   // d_u1z/d_alpha2
+								   (m_V0(0UL, 5UL) + m_beta[1UL] * m_V0(5UL, 5UL)) / m_beta[0UL],																								   // d_u1z/d_alpha3
+								   (m_V0(0UL, 6UL) + m_beta[1UL] * m_V0(5UL, 6UL)) / m_beta[0UL],																								   // d_u1z/d_wf1
+								   (m_V0(0UL, 7UL) + m_beta[1UL] * m_V0(5UL, 7UL)) / m_beta[0UL],																								   // d_u1z/d_wf2
+								   (m_V0(0UL, 8UL) + m_beta[1UL] * m_V0(5UL, 8UL)) / m_beta[0UL],																								   // d_u1z/d_wf3
+								   (m_V0(0UL, 9UL) + m_beta[1UL] * m_V0(5UL, 9UL)) / m_beta[0UL],																								   // d_u1z/d_wm1
+								   (m_V0(0UL, 10UL) + m_beta[1UL] * m_V0(5UL, 10UL)) / m_beta[0UL],																								   // d_u1z/d_wm2
+								   (m_V0(0UL, 11UL) + m_beta[1UL] * m_V0(5UL, 11UL)) / m_beta[0UL],																								   // d_u1z/d_wm3
+								   (m_V0(0UL, 12UL) + m_beta[1UL] * m_V0(5UL, 12UL)) / m_beta[0UL],																								   // d_u1z/d_u1x(0)
+								   (m_V0(0UL, 13UL) + m_beta[1UL] * m_V0(5UL, 13UL)) / m_beta[0UL],																								   // d_u1z/d_u1y(0)
+								   1.0,																																							   // d_u1z/d_u1z(0)
+								   (m_V0(0UL, 15UL) + m_beta[1UL]) / m_beta[0UL],																												   // d_u1z/d_u2z(0)
+								   (m_V0(0UL, 16UL) + m_beta[1UL] * m_V0(5UL, 16UL)) / m_beta[0UL]};																							   // d_u1z/d_u3z(0)
 
 	blaze::row<5UL>(this->m_V0) = {(-m_V0(0UL, 0UL) + uz_0[0UL] + m_beta[0UL] * m_V0(4UL, 0UL)) / m_beta[1UL],																					   // d_u2z/d_beta1
 								   (m_beta[0UL] * m_V0(4UL, 1UL) - m_V0(0UL, 1UL)) / m_beta[1UL] - (m_q[4UL] - m_q[3UL] - m_theta_0[1UL] + m_beta[0UL] * uz_0[0UL]) / (m_beta[1UL] * m_beta[1UL]), // d_u2z/d_beta2
@@ -209,11 +209,11 @@ void CTR::reset(const blaze::StaticVector<double, 5UL> &initGuess)
 								   (m_beta[0UL] * m_V0(4UL, 9UL) - m_V0(0UL, 9UL)) / m_beta[1UL],																								   // d_u2z/d_wm1
 								   (m_beta[0UL] * m_V0(4UL, 10UL) - m_V0(0UL, 10UL)) / m_beta[1UL],																								   // d_u2z/d_wm2
 								   (m_beta[0UL] * m_V0(4UL, 11UL) - m_V0(0UL, 11UL)) / m_beta[1UL],																								   // d_u2z/d_wm3
-								   0.0,																																							   // d_u2z/d_u1x(0)
-								   0.0,																																							   // d_u2z/d_u1y(0)
-								   (-m_V0(0UL, 14UL) + m_beta[0UL] + m_beta[0UL] * m_V0(4UL, 14UL)) / m_beta[1UL],																				   // d_u2z/d_u1z(0)
+								   (m_beta[0UL] * m_V0(4UL, 12UL) - m_V0(0UL, 12UL)) / m_beta[1UL],																								   // d_u2z/d_u1x(0)
+								   (m_beta[0UL] * m_V0(4UL, 13UL) - m_V0(0UL, 13UL)) / m_beta[1UL],																								   // d_u2z/d_u1y(0)
+								   (m_beta[0UL] - m_V0(0UL, 14UL)) / m_beta[1UL],																				   								   // d_u2z/d_u1z(0)
 								   1.0,																																							   // d_u2z/d_u2z(0)
-								   (-m_V0(0UL, 16UL) + m_beta[0UL] * m_V0(4UL, 16UL)) / m_beta[1UL]};																							   // d_u2z/d_u3z(0)
+								   (m_beta[0UL] * m_V0(4UL, 16UL) - m_V0(0UL, 16UL)) / m_beta[1UL]};																							   // d_u2z/d_u3z(0)
 
 	blaze::row<6UL>(this->m_V0) = {(-m_V0(1UL, 0UL) + uz_0[0UL] + m_beta[0UL] * m_V0(4UL, 0UL)) / m_beta[2UL],																					   // d_u3z/d_beta1
 								   (m_beta[0UL] * m_V0(4UL, 1UL) - m_V0(1UL, 1UL)) / m_beta[2UL],																								   // d_u3z/d_beta2
@@ -227,10 +227,10 @@ void CTR::reset(const blaze::StaticVector<double, 5UL> &initGuess)
 								   (m_beta[0UL] * m_V0(4UL, 9UL) - m_V0(1UL, 9UL)) / m_beta[2UL],																								   // d_u3z/d_wm1
 								   (m_beta[0UL] * m_V0(4UL, 10UL) - m_V0(1UL, 10UL)) / m_beta[2UL],																								   // d_u3z/d_wm2
 								   (m_beta[0UL] * m_V0(4UL, 11UL) - m_V0(1UL, 11UL)) / m_beta[2UL],																								   // d_u3z/d_wm3
-								   0.0,																																							   // d_u3z/d_u1x(0)
-								   0.0,																																							   // d_u3z/d_u1y(0)
-								   (-m_V0(1UL, 14UL) + m_beta[0UL] + m_beta[0UL] * m_V0(4UL, 14UL)) / m_beta[2UL],																				   // d_u3z/d_u1z(0)
-								   (-m_V0(1UL, 15UL) + m_beta[0UL] * m_V0(4UL, 15UL)) / m_beta[2UL],																							   // d_u3z/d_u2z(0)
+								   (m_beta[0UL] * m_V0(4UL, 12UL) - m_V0(1UL, 12UL)) / m_beta[2UL],																								   // d_u3z/d_u1x(0)
+								   (m_beta[0UL] * m_V0(4UL, 13UL) - m_V0(1UL, 13UL)) / m_beta[2UL],																								   // d_u3z/d_u1y(0)
+								   (m_beta[0UL] - m_V0(1UL, 14UL)) / m_beta[2UL],																				   								   // d_u3z/d_u1z(0)
+								   (m_beta[0UL] * m_V0(4UL, 15UL) - m_V0(1UL, 15UL)) / m_beta[2UL],																							   	   // d_u3z/d_u2z(0)
 								   1.0};																																						   // d_u3z/d_u3z(0)
 
 	std::cout << "m_V0 =\n"
@@ -250,12 +250,10 @@ void CTR::reset(const blaze::StaticVector<double, 5UL> &initGuess)
 	dH_dxk = {{scale * s, scale * c, 0.0, 0.0}, {-scale * c, scale * s, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}};
 	blaze::column<0UL>(this->m_E0) = mathOp::wedgeOperator(dH_dxk * g_inv);
 	// dH/d_beta_2
-	scale = m_beta[0UL] * this->m_V0(4UL, 1UL);
-	dH_dxk = {{scale * s, scale * c, 0.0, 0.0}, {-scale * c, scale * s, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}};
+	dH_dxk = {{0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}};
 	blaze::column<1UL>(this->m_E0) = mathOp::wedgeOperator(dH_dxk * g_inv);
 	// dH/d_beta_3
-	scale = m_beta[0UL] * this->m_V0(4UL, 2UL);
-	dH_dxk = {{scale * s, scale * c, 0.0, 0.0}, {-scale * c, scale * s, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}};
+	dH_dxk = {{0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}};
 	blaze::column<2UL>(this->m_E0) = mathOp::wedgeOperator(dH_dxk * g_inv);
 	// dH/d_alpha_1
 	scale = 1 - m_beta[0UL] * this->m_V0(4UL, 3UL);
@@ -263,11 +261,11 @@ void CTR::reset(const blaze::StaticVector<double, 5UL> &initGuess)
 	blaze::column<3UL>(this->m_E0) = mathOp::wedgeOperator(dH_dxk * g_inv);
 	// dH/d_alpha_2
 	scale = -m_beta[0UL] * this->m_V0(4UL, 4UL);
-	dH_dxk = {{scale * s, scale * c, 0.0, 0.0}, {-scale * c, scale * s, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}};
+	dH_dxk = {{-scale * s, -scale * c, 0.0, 0.0}, {scale * c, -scale * s, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}};
 	blaze::column<4UL>(this->m_E0) = mathOp::wedgeOperator(dH_dxk * g_inv);
 	// dH/d_alpha_3
 	scale = -m_beta[0UL] * this->m_V0(4UL, 5UL);
-	dH_dxk = {{scale * s, scale * c, 0.0, 0.0}, {-scale * c, scale * s, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}};
+	dH_dxk = {{-scale * s, -scale * c, 0.0, 0.0}, {scale * c, -scale * s, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}};
 	blaze::column<5UL>(this->m_E0) = mathOp::wedgeOperator(dH_dxk * g_inv);
 
 	// dH/d_wf_1
